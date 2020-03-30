@@ -2,53 +2,52 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 
-public class Knights {
+public class Knights_7_22 {
 
-    private int[][] board;
-    private int[][] accessibility;
+    private int[][] board; // 2D array represents chess board
+    private int[][] accessibility; // 2D array stores accessibility values
 
     final int NUM_ROWS = 8, NUM_COLS = 8;
     private int moveCounter = 1;
     private int locRow, locCol;
 
-    private int maxTourLength;
-    private int minTourLength;
-    private int totalTours;
+    private int maxTourLength = 1;
+    private int minTourLength = 64;
+    private int totalTours = 1;
     private int completedTours;
 
+    // horizontal and vertical shift arrays used to represent possible moves on board
     private final int[] H_SHIFT = {2, 1, -1, -2, -2, -1, 1, 2};
     private final int[] V_SHIFT = {-1, -2, -2, -1, 1, 2, 2, 1};
 
-    public Knights(int startRow, int startCol) {
+    public Knights_7_22(int startRow, int startCol) {
+        // set current location to starting position
         locCol = startCol;
         locRow = startRow;
 
-        board = new int[NUM_ROWS][NUM_COLS];
-        accessibility = new int[NUM_ROWS][NUM_COLS];
+        board = new int[NUM_ROWS][NUM_COLS]; // create standard 8x8 board
+        accessibility = new int[NUM_ROWS][NUM_COLS]; // create accessibility array
 
-        placePiece(locRow, locCol);
+        placePiece(locRow, locCol); // place starting piece
     }
 
     public void run() {
-        Scanner scanner = new Scanner(System.in);
 
-        System.out.println("How many tours would you like to run?");
-        int numberOfTours = scanner.nextInt();
-
-        for (int i = 0; i < numberOfTours; i++) {
-            tour();
-        }
         System.out.println("Tour # " + totalTours);
+        tour();
     }
 
     public void tour() {
 
+        // loop executes until move cannot be made (tour ends)
         while (true) {
-            if(!makeMove()) {
+            if (!makeMove()) {
                 break;
             }
-            printBoard();
+            setAccessibility();
         }
+
+        printBoard(); // print final board for individual tour
         totalTours++;
 
     }
@@ -58,9 +57,10 @@ public class Knights {
         //get all available moves
         ArrayList<Integer> moves = getAvailableMoves(locRow, locCol);
 
-        //pick a move - first available
+        //pick a move - lowest accessibility number
+
         if (moves.size() > 0) {
-            int move = moves.get(0);
+            int move = getLeastAccessibleMove(moves);
 
             //place piece
             moveMade = placePiece(locRow + V_SHIFT[move], locCol + H_SHIFT[move]);
@@ -84,9 +84,6 @@ public class Knights {
             }
         }
 
-        //update board
-        //printBoard();
-
         //if moves is empty return false
         return moveMade;
     }
@@ -94,25 +91,42 @@ public class Knights {
     public ArrayList<Integer> getAvailableMoves(int row, int col) {
         ArrayList<Integer> moves = new ArrayList<>();
 
-        for (int i = 0; i < H_SHIFT.length; i++) {
+        for (int i = 0; i < H_SHIFT.length; i++) { // check each move out of all possible moves
             int rowOffset = V_SHIFT[i] + row;
             int colOffset = H_SHIFT[i] + col;
             if (validMove(rowOffset, colOffset)) {
-                moves.add(i);
+                moves.add(i); // if move is valid, add to available moves
             }
         }
         return moves;
     }
 
+    //get least accessible move from current position. In case of tie, return the first
+    public int getLeastAccessibleMove(ArrayList<Integer> moves) {
+        int leastAccessible = 10;
+        int bestMove = -1;
+        for (int move : moves) {
+            if (accessibility[locRow + V_SHIFT[move]][locCol + H_SHIFT[move]] < leastAccessible) {
+                leastAccessible = accessibility[locRow + V_SHIFT[move]][locCol + H_SHIFT[move]];
+                bestMove = move;
+            } else {
+                return bestMove;
+            }
+        }
+        return bestMove;
+    }
+
+    // fill accessibility array with correct numbers for the current space
     public void setAccessibility() {
 
-        fillArray(accessibility);
+        fillArray(accessibility); // start by setting all values to 0
 
+        // for each space, calculate possible moves and set element to that value
         for (int row = 0; row < board.length; row++) {
             for (int col = 0; col < board[row].length; col++) {
 
                 int counter = 0;
-                for (int move: getAvailableMoves(row, col)) {
+                for (int move : getAvailableMoves(row, col)) {
                     counter++;
                 }
                 accessibility[row][col] = counter;
@@ -120,6 +134,7 @@ public class Knights {
         }
     }
 
+    // print accessibility array
     public void printAccessibility() {
         for (int[] row : accessibility) {
             System.out.println(Arrays.toString(row));
@@ -127,16 +142,20 @@ public class Knights {
         System.out.println();
     }
 
+    // if move is valid, place piece and increment move counter
     public boolean placePiece(int row, int col) {
         boolean piecePlaced = false;
         if (validMove(row, col)) {
             board[row][col] = moveCounter;
-            moveCounter++;
+            if (moveCounter < 64) {
+                moveCounter++;
+            }
             piecePlaced = true;
         }
         return piecePlaced;
     }
 
+    // check if move is within confines of the board and space has not already been used
     public boolean validMove(int row, int col) {
         boolean validTop = row >= 0;
         boolean validBottom = row < board.length;
@@ -152,6 +171,7 @@ public class Knights {
         System.out.println();
     }
 
+    // reset variables that must be set prior to running tour
     public void resetTour(int row, int col) {
         moveCounter = 1;
         fillArray(board);
@@ -160,6 +180,7 @@ public class Knights {
         locCol = col;
     }
 
+    // fill array with 0s
     public void fillArray(int[][] array) {
 
         for (int row = 0; row < array.length; row++) {
